@@ -692,7 +692,8 @@ def calculate_polygonal_environment(im: Image.Image = None,
                                     im_feats: np.ndarray = None,
                                     scale: Tuple[int, int] = None,
                                     topline: bool = False,
-                                    raise_on_error: bool = False):
+                                    raise_on_error: bool = False,
+                                    default_polygon: Optional[tuple[int, int, int, int]] = None):
     """
     Given a list of baselines and an input image, calculates a polygonal
     environment around each baseline.
@@ -780,8 +781,17 @@ def calculate_polygonal_environment(im: Image.Image = None,
         except Exception as e:
             if raise_on_error:
                 raise
-            logger.warning(f'Polygonizer failed on line {idx}: {e}')
-            polygons.append(None)
+            logger.warning(f'\nPolygonizer failed on line {idx}: {e}')
+            if default_polygon is None:
+                polygons.append(None)
+            else:
+                logger.warning('Adding fallback polygon.')
+                polygons.append(np.array([
+                    [line[0][0] - default_polygon[0], line[0][1] - default_polygon[1]],
+                    [line[-1][0] + default_polygon[2], line[-1][1] - default_polygon[1]],
+                    [line[-1][0] + default_polygon[2], line[-1][1] + default_polygon[3]],
+                    [line[0][0] - default_polygon[0], line[0][1] + default_polygon[3]],
+                ]))
 
     if scale is not None:
         polygons = [(np.array(pol)/scale).astype('uint').tolist() if pol is not None else None for pol in polygons]
