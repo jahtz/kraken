@@ -183,6 +183,7 @@ class Segmentation:
     lines: Optional[List[Union[BaselineLine, BBoxLine]]] = None
     regions: Optional[Dict[str, List[Region]]] = None
     line_orders: Optional[List[List[int]]] = None
+    heatmap: Optional[Any] = None
 
     def __post_init__(self):
         if not self.regions:
