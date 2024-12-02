@@ -693,7 +693,7 @@ def calculate_polygonal_environment(im: Image.Image = None,
                                     scale: Tuple[int, int] = None,
                                     topline: bool = False,
                                     raise_on_error: bool = False,
-                                    default_polygon: Optional[tuple[int, int, int, int]] = None):
+                                    filename: str = "unknown",):
     """
     Given a list of baselines and an input image, calculates a polygonal
     environment around each baseline.
@@ -718,10 +718,13 @@ def calculate_polygonal_environment(im: Image.Image = None,
                  offset downwards. If set to None, no offset will be applied.
         raise_on_error: Raises error instead of logging them when they are
                         not-blocking
+        filename: Filename for logging purposes.
     Returns:
-        List of lists of coordinates. If no polygonization could be compute for
+        List of lists of coordinates. If no polygonization could be computed for
         a baseline `None` is returned instead.
     """
+    # TODO: update docstring
+
     if scale is not None and (scale[0] > 0 or scale[1] > 0):
         w, h = im.size
         oh, ow = scale
@@ -777,7 +780,9 @@ def calculate_polygonal_environment(im: Image.Image = None,
         except Exception as e:
             if raise_on_error:
                 raise
-            logger.warning(f'\nPolygonizer failed on line {idx}: {e}')
+            logger.warning(f'{filename}: Polygonizer failed on line {idx}: {e}')
+            polygons.append(None)  # remove this line if a polygon is provided
+            """"
             if default_polygon is None:
                 polygons.append(None)
             else:
@@ -787,7 +792,7 @@ def calculate_polygonal_environment(im: Image.Image = None,
                     [line[-1][0] + default_polygon[2], line[-1][1] - default_polygon[1]],
                     [line[-1][0] + default_polygon[2], line[-1][1] + default_polygon[3]],
                     [line[0][0] - default_polygon[0], line[0][1] + default_polygon[3]],
-                ]))
+                ])) """
 
     if scale is not None:
         polygons = [(np.array(pol)/scale).astype('uint').tolist() if pol is not None else None for pol in polygons]

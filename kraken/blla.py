@@ -168,7 +168,7 @@ def vec_lines(heatmap: torch.Tensor,
               suppl_obj: List[np.ndarray] = None,
               topline: Optional[bool] = False,
               raise_on_error: bool = False,
-              default_polygon: Optional[tuple[int, int, int, int]] = None,
+              filename: str = "unknown",
               **kwargs) -> List[Dict[str, Any]]:
     r"""
     Computes lines from a stack of heatmaps, a class mapping, and scaling
@@ -191,6 +191,7 @@ def vec_lines(heatmap: torch.Tensor,
                  centerline.
         raise_on_error: Raises error instead of logging them when they are
                         not-blocking
+        filename: Filename for logging purposes.
 
     Returns:
         A list of dictionaries containing the baselines, bounding polygons, and
@@ -232,7 +233,7 @@ def vec_lines(heatmap: torch.Tensor,
                                               suppl_obj=suppl_obj,
                                               topline=topline,
                                               raise_on_error=raise_on_error,
-                                              default_polygon=default_polygon)
+                                              filename=filename)
         if pol[0] is not None:
             lines.append((bl[0], bl[1], pol[0]))
 
@@ -251,7 +252,8 @@ def segment(im: PIL.Image.Image,
             device: str = 'cpu',
             raise_on_error: bool = False,
             autocast: bool = False,
-            default_polygon: Optional[tuple[int, int, int, int]] = None) -> Segmentation:
+            fallback_polygon: bool = False,
+            heatmap: bool = False) -> Segmentation:
     r"""
     Segments a page into text lines using the baseline segmenter.
 
@@ -275,6 +277,8 @@ def segment(im: PIL.Image.Image,
         raise_on_error: Raises error instead of logging them when they are
                         not-blocking
         autocast: Runs the model with automatic mixed precision
+        fallback_polygon: Compute a fallback polygon if no polygon can be generated.
+        heatmap: Return the computed heatmap in the output.
 
     Returns:
         A :class:`kraken.containers.Segmentation` class containing reading
@@ -341,14 +345,18 @@ def segment(im: PIL.Image.Image,
         # convert back to net scale
         suppl_obj = scale_regions([x.boundary for x in suppl_obj], 1/rets['scale'])
         line_regs = scale_regions([x.boundary for x in line_regs], 1/rets['scale'])
-
+        print("rets:")
+        for k, v in rets.items():
+            print(f"{k}: {v}")
+        print("\nline_regs:")
+        print(line_regs)
         _lines = vec_lines(**rets,
                            regions=line_regs,
                            text_direction=text_direction,
                            suppl_obj=suppl_obj,
                            topline=net.user_metadata['topline'] if 'topline' in net.user_metadata else False,
                            raise_on_error=raise_on_error,
-                           default_polygon=default_polygon)
+                           filename=im_str)
 
         if 'ro_model' in net.aux_layers:
             logger.info(f'Using reading order model found in segmentation model {net}.')
