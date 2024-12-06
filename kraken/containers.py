@@ -175,6 +175,7 @@ class Segmentation:
         regions: Dict mapping types to lists of regions.
         line_orders: List of alternative reading orders for the segmentation.
                      Each reading order is a list of line indices.
+        heatmap: A optional stack of heatmaps of shape `NxHxW` output from the network.
     """
     type: Literal['baselines', 'bbox']
     imagename: Union[str, 'PathLike']
@@ -183,7 +184,7 @@ class Segmentation:
     lines: Optional[List[Union[BaselineLine, BBoxLine]]] = None
     regions: Optional[Dict[str, List[Region]]] = None
     line_orders: Optional[List[List[int]]] = None
-    heatmap: Optional[Any] = None
+    heatmap: Optional[np.ndarray] = None
 
     def __post_init__(self):
         if not self.regions:
