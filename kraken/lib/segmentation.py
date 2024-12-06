@@ -693,6 +693,7 @@ def calculate_polygonal_environment(im: Image.Image = None,
                                     scale: Tuple[int, int] = None,
                                     topline: bool = False,
                                     raise_on_error: bool = False,
+                                    fallback_polygon: Optional[int] = None,
                                     filename: str = "unknown",):
     """
     Given a list of baselines and an input image, calculates a polygonal
@@ -718,6 +719,8 @@ def calculate_polygonal_environment(im: Image.Image = None,
                  offset downwards. If set to None, no offset will be applied.
         raise_on_error: Raises error instead of logging them when they are
                         not-blocking
+        fallback_polygon: Draw a default rectangular polygon around the baseline if polygonizer fails.
+                          Requires a average glyph height in pixels.
         filename: Filename for logging purposes.
     Returns:
         List of lists of coordinates. If no polygonization could be computed for
@@ -781,18 +784,21 @@ def calculate_polygonal_environment(im: Image.Image = None,
             if raise_on_error:
                 raise
             logger.warning(f'{filename}: Polygonizer failed on line {idx}: {e}')
-            polygons.append(None)  # remove this line if a polygon is provided
-            """"
-            if default_polygon is None:
+            if fallback_polygon is None:
                 polygons.append(None)
-            else:
+            else:  # compute a fallback polygon
                 logger.warning('Adding fallback polygon.')
-                polygons.append(np.array([
-                    [line[0][0] - default_polygon[0], line[0][1] - default_polygon[1]],
-                    [line[-1][0] + default_polygon[2], line[-1][1] - default_polygon[1]],
-                    [line[-1][0] + default_polygon[2], line[-1][1] + default_polygon[3]],
-                    [line[0][0] - default_polygon[0], line[0][1] + default_polygon[3]],
-                ])) """
+                if topline:
+                    poly = [[line[0][0], line[0][1] - int(fallback_polygon * 1/3)],
+                            [line[-1][0], line[-1][1] - int(fallback_polygon * 1/3)],
+                            [line[-1][0], line[-1][1] + int(fallback_polygon * 2/3)],
+                            [line[0][0], line[0][1] + int(fallback_polygon * 2/3)]]
+                else:
+                    poly = [[line[0][0], line[0][1] - int(fallback_polygon * 2/3)],
+                            [line[-1][0], line[-1][1] - int(fallback_polygon * 2/3)],
+                            [line[-1][0], line[-1][1] + int(fallback_polygon * 1/3)],
+                            [line[0][0], line[0][1] + int(fallback_polygon * 1/3)]]
+                polygons.append(np.array(poly))
 
     if scale is not None:
         polygons = [(np.array(pol)/scale).astype('uint').tolist() if pol is not None else None for pol in polygons]
