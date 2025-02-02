@@ -324,12 +324,16 @@ class XMLPage(object):
                 # parse transkribus-style custom field if possible
                 custom_str = region.get('custom')
                 if custom_str:
-                    cs = self._parse_page_custom(custom_str)
-                    if not rtype and 'structure' in cs and 'type' in cs['structure']:
-                        rtype = cs['structure']['type']
-                    # transkribus-style reading order
-                    if 'readingOrder' in cs and 'index' in cs['readingOrder']:
-                        tr_region_order.append((region.get('id'), int(cs['readingOrder']['index'])))
+                    try:
+                        cs = self._parse_page_custom(custom_str)
+                        if not rtype and 'structure' in cs and 'type' in cs['structure']:
+                            rtype = cs['structure']['type']
+                        # transkribus-style reading order
+                        if 'readingOrder' in cs and 'index' in cs['readingOrder']:
+                            tr_region_order.append((region.get('id'), int(cs['readingOrder']['index'])))
+                    except ValueError as e:
+                        logger.warning(f'Parsing custom field failed: {e}')
+                        pass
                 # fall back to default region type if nothing is given
                 if not rtype:
                     rtype = page_regions[region.tag.split('}')[-1]]
