@@ -787,7 +787,7 @@ def calculate_polygonal_environment(im: Image.Image = None,
             if progress is None:
                 logger.warning(f'{filename}: Polygonizer failed on line {idx}: {e}')
             else:
-                progress.log(f'Polygonizer failed on line {idx}: {e}')
+                progress.log(f'{filename}: Polygonizer failed on line {idx}: {e}')
             if fallback_polygon is None:
                 polygons.append(None)
             else:  # compute a fallback polygon
