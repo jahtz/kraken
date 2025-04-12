@@ -711,6 +711,7 @@ class SegmentationModel(L.LightningModule):
                  model: Optional[Union['PathLike', str]] = None,
                  training_data: Union[Sequence[Union['PathLike', str]], Sequence[Segmentation]] = None,
                  evaluation_data: Optional[Union[Sequence[Union['PathLike', str]], Sequence[Segmentation]]] = None,
+                 imagesuffix: Optional[str] = None,
                  partition: Optional[float] = 0.9,
                  num_workers: int = 1,
                  force_binarization: bool = False,
@@ -798,10 +799,10 @@ class SegmentationModel(L.LightningModule):
 
         if format_type in ['xml', 'page', 'alto']:
             logger.info(f'Parsing {len(training_data)} XML files for training data')
-            training_data = [XMLPage(file, format_type).to_container() for file in training_data]
+            training_data = [XMLPage(file, format_type, imagesuffix).to_container() for file in training_data]
             if evaluation_data:
                 logger.info(f'Parsing {len(evaluation_data)} XML files for validation data')
-                evaluation_data = [XMLPage(file, format_type).to_container() for file in evaluation_data]
+                evaluation_data = [XMLPage(file, format_type, imagesuffix).to_container() for file in evaluation_data]
         elif not format_type:
             pass
         else:

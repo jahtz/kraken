@@ -73,10 +73,12 @@ class XMLPage(object):
 
     def __init__(self,
                  filename: Union[str, 'PathLike'],
-                 filetype: Literal['xml', 'alto', 'page'] = 'xml'):
+                 filetype: Literal['xml', 'alto', 'page'] = 'xml',
+                 imagesuffix: Optional[str] = None):
         super().__init__()
         self.filename = Path(filename)
         self.filetype = filetype
+        self.imagesuffix = imagesuffix
 
         self._regions = {}
         self._lines = {}
@@ -110,11 +112,14 @@ class XMLPage(object):
                 doc = etree.parse(fp)
             except etree.XMLSyntaxError as e:
                 raise ValueError('Parsing {} failed: {}'.format(self.filename, e))
-            image = doc.find('.//{*}fileName')
-            if image is None or not image.text:
-                raise ValueError('No valid image filename found in ALTO file {self.filename}')
+            if self.imagesuffix is None:
+                image = doc.find('.//{*}fileName')
+                if image is None or not image.text:
+                    raise ValueError('No valid image filename found in ALTO file {self.filename}')
+                self.imagename = base_directory.joinpath(image.text)
+            else:
+                self.imagename = base_directory.joinpath(f"{self.filename.name.split('.')[0]}{self.imagesuffix}")
 
-            self.imagename = base_directory.joinpath(image.text)
             page = doc.find('.//{*}Page')
             self.image_size = int(page.get('WIDTH')), int(page.get('HEIGHT'))
 
@@ -285,8 +290,12 @@ class XMLPage(object):
             except etree.XMLSyntaxError as e:
                 raise ValueError(f'Parsing {self.filename} failed: {e}')
             image = doc.find('.//{*}Page')
-            if image is None or image.get('imageFilename') is None:
-                raise ValueError(f'No valid image filename found in PageXML file {self.filename}')
+            if self.imagesuffix is None:
+                if image is None or image.get('imageFilename') is None:
+                    raise ValueError(f'No valid image filename found in PageXML file {self.filename}')
+                self.imagename = base_directory.joinpath(image.get('imageFilename'))
+            else:
+                self.imagename = base_directory.joinpath(f"{self.filename.name.split('.')[0]}{self.imagesuffix}")
             try:
                 self.base_dir = {'left-to-right': 'L',
                                  'right-to-left': 'R',
@@ -295,7 +304,6 @@ class XMLPage(object):
                                  None: None}[image.get('readingDirection')]
             except KeyError:
                 logger.warning(f'Invalid value {image.get("readingDirection")} encountered in page-level reading direction.')
-            self.imagename = base_directory.joinpath(image.get('imageFilename'))
             self.image_size = int(image.get('imageWidth')), int(image.get('imageHeight'))
 
             # find all image regions
