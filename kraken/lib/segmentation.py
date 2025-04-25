@@ -24,7 +24,6 @@ import numpy as np
 import shapely.geometry as geom
 import torch
 import torch.nn.functional as F
-from rich.progress import Progress
 from PIL import Image, ImageDraw
 from PIL.Image import Resampling, Transform
 from scipy.ndimage import (binary_erosion, distance_transform_cdt,
@@ -695,8 +694,7 @@ def calculate_polygonal_environment(im: Image.Image = None,
                                     topline: bool = False,
                                     raise_on_error: bool = False,
                                     fallback_polygon: Optional[int] = None,
-                                    filename: str = "unknown",
-                                    progress: Optional[Progress] = None):
+                                    filename: str = "unknown"):
     """
     Given a list of baselines and an input image, calculates a polygonal
     environment around each baseline.
@@ -724,7 +722,6 @@ def calculate_polygonal_environment(im: Image.Image = None,
         fallback_polygon: Draw a default rectangular polygon around the baseline if polygonizer fails.
                           Requires an average glyph height in pixels.
         filename: Filename for logging purposes.
-        progress: Rich progress bar for logging
     Returns:
         List of lists of coordinates. If no polygonization could be computed for
         a baseline `None` is returned instead.
@@ -784,17 +781,11 @@ def calculate_polygonal_environment(im: Image.Image = None,
         except Exception as e:
             if raise_on_error:
                 raise
-            if progress is None:
-                logger.warning(f'{filename}: Polygonizer failed on line {idx}: {e}')
-            else:
-                progress.log(f'{filename}: Polygonizer failed on line {idx}: {e}')
             if fallback_polygon is None:
+                logger.warning(f"{filename}: Polygonizer failed in line {idx} ({e})")
                 polygons.append(None)
             else:  # compute a fallback polygon
-                if progress is None:
-                    logger.warning('Adding fallback polygon.')
-                else:
-                    progress.log('Adding fallback polygon.')
+                logger.warning(f"{filename}: Polygonizer failed in line {idx}. Adding fallback polygon")
                 if topline:
                     poly = [[line[0][0], line[0][1] - int(fallback_polygon * 1/3)],
                             [line[-1][0], line[-1][1] - int(fallback_polygon * 1/3)],

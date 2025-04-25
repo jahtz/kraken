@@ -33,7 +33,6 @@ import torch.nn.functional as F
 import torchvision.transforms as tf
 from scipy.ndimage import gaussian_filter
 from skimage.filters import sobel
-from rich.progress import Progress
 
 from kraken.containers import BaselineLine, Region, Segmentation
 from kraken.lib import dataset, vgsl
@@ -171,7 +170,6 @@ def vec_lines(heatmap: torch.Tensor,
               raise_on_error: bool = False,
               fallback_polygon: Optional[int] = None,
               filename: str = "unknown",
-              progress: Optional[Progress] = None,
               **kwargs) -> List[Dict[str, Any]]:
     r"""
     Computes lines from a stack of heatmaps, a class mapping, and scaling
@@ -197,7 +195,6 @@ def vec_lines(heatmap: torch.Tensor,
         fallback_polygon: Draw a default rectangular polygon around the baseline if polygonizer fails.
                           Requires a average glyph height in pixels.
         filename: Filename for logging purposes.
-        progress: Rich progress bar for logging.
 
     Returns:
         A list of dictionaries containing the baselines, bounding polygons, and
@@ -240,8 +237,7 @@ def vec_lines(heatmap: torch.Tensor,
                                               topline=topline,
                                               raise_on_error=raise_on_error,
                                               fallback_polygon=fallback_polygon,
-                                              filename=filename,
-                                              progress=progress)
+                                              filename=filename)
         if pol[0] is not None:
             lines.append((bl[0], bl[1], pol[0]))
 
@@ -260,9 +256,7 @@ def segment(im: PIL.Image.Image,
             device: str = 'cpu',
             raise_on_error: bool = False,
             autocast: bool = False,
-            fallback_polygon: Optional[int] = None,
-            heatmap: bool = False,
-            progress: Optional[Progress] = None) -> Segmentation:
+            fallback_polygon: Optional[int] = None) -> Segmentation:
     r"""
     Segments a page into text lines using the baseline segmenter.
 
@@ -288,8 +282,6 @@ def segment(im: PIL.Image.Image,
         autocast: Runs the model with automatic mixed precision
         fallback_polygon: Draw a default rectangular polygon around the baseline if polygonizer fails.
                           Requires an average glyph height in pixels.
-        heatmap: Return the computed heatmap in the output.
-        progress: Rich progress bar for logging
 
     Returns:
         A :class:`kraken.containers.Segmentation` class containing reading
@@ -363,8 +355,7 @@ def segment(im: PIL.Image.Image,
                            topline=net.user_metadata['topline'] if 'topline' in net.user_metadata else False,
                            raise_on_error=raise_on_error,
                            fallback_polygon=fallback_polygon,
-                           filename=im_str,
-                           progress=progress)
+                           filename=im_str)
 
         if 'ro_model' in net.aux_layers:
             logger.info(f'Using reading order model found in segmentation model {net}.')
@@ -419,4 +410,5 @@ def segment(im: PIL.Image.Image,
                         lines=blls,
                         regions=regions,
                         script_detection=script_detection,
-                        line_orders=[order] if order else [])
+                        line_orders=[order] if order else [],
+                        heatmap=rets["heatmap"])

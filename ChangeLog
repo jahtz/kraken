@@ -1,6 +1,8 @@
 CHANGES
 =======
 
+* select image suffix for segmentation training
+* segment: rich progress print filename on error
 * add custom logging
 * ignore errors when parsing custom fields
 * fix dependencies
